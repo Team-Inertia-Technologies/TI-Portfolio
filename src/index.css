@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: #7B61A8;
+  --color-primary-dark: #6A4E95;
+  --color-dark: #2E2E2E;
+  --color-body: #6B6B6B;
+  --color-light: #F5F5F7;
+  
+  /* Accent Colors */
+  --color-peach: #F2995C;
+  --color-pink: #E58AB2;
+  --color-lavender: #B8A9D9;
+  --color-blue: #9EC3D8;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans text-body bg-white;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-bold text-dark;
+  }
+}
+
+@layer utilities {
+  .glass-nav {
+    @apply bg-white/90 backdrop-blur-md border-b border-black/5;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-md font-medium transition-all duration-300;
+  }
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-dark;
+  }
+}
