@@ -4,9 +4,10 @@
  */
 
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, ArrowRight, Linkedin, Instagram, Facebook, Twitter, Menu, X, CheckCircle2, Monitor, Globe, Code, ExternalLink } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, ArrowRight, Linkedin, Instagram, Facebook, Twitter, Menu, X, CheckCircle2, Monitor, Globe, Code, ExternalLink, Search, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useLocation } from "react-router-dom";
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 
 const PROJECTS = [
   { 
@@ -209,6 +210,26 @@ const PROJECTS = [
     handoverDate: "August 2025",
     link: "https://fomentorealty.com" 
   },
+  { 
+    id: "bits-biocytih", 
+    title: "BITS BioCyTiH", 
+    sector: "Non-Profit", 
+    desc: "Innovation hub for Cyber-Physical Systems.", 
+    thumbnail: "/bits-biocytih.png",
+    bodyDesc: "BITS BioCyTiH Foundation (BBF) is a non-profit innovation hub set up by BITS Pilani and funded by the Government of India under the National Mission on Interdisciplinary Cyber-Physical Systems (NM-ICPS). We developed a comprehensive digital platform to showcase their research initiatives, startup incubation programs, and technological breakthroughs in the field of bio-cyber-physical systems.\n\nThe website serves as a bridge between academia, industry, and government, facilitating collaboration and knowledge exchange to drive innovation in healthcare, agriculture, and environmental monitoring.",
+    handoverDate: "April 2025",
+    link: "https://biocytih.co.in" 
+  },
+  { 
+    id: "rexes-bpo", 
+    title: "Rexes BPO", 
+    sector: "Business", 
+    desc: "Leading BPO solutions for customer support and data management.", 
+    thumbnail: "/rexes-bpo.png",
+    bodyDesc: "Rexes BPO Solutions is a Goa-based business process outsourcing company offering a range of call center and data management services to both international and local clients. With over four years of experience, the company specializes in inbound and outbound customer support, data entry, document transcription, document digitalization, and market survey solutions.\n\nThe company emphasizes quality, efficiency, and social impact alongside its service offerings. Rexes BPO highlights its government-supported training initiatives that provide free computer education to around 300 candidates annually, focusing on empowering underrepresented communities. With an ISO-certified approach, dedicated account management, and experience serving clients in European and Australian markets, the company aims to combine global service standards with local expertise to support business growth.",
+    handoverDate: "April 2026",
+    link: "https://rexesbpo.com" 
+  },
 ];
 
 const VERTICALS = [
@@ -233,9 +254,91 @@ const NAV_LINKS = [
   { name: "Home", href: "#home" },
   { name: "Projects", href: "#portfolio" },
   { name: "Services", href: "#services" },
-  { name: "About", href: "#about" },
   { name: "Contact", href: "#contact" },
 ];
+
+function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+
+  return (
+    <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-black/5">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2">
+          <img 
+            src="/header-logo.png" 
+            alt="teamINERTIA TECHNOLOGIES" 
+            className="h-12 w-auto object-contain" 
+            referrerPolicy="no-referrer" 
+          />
+        </Link>
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-8">
+          {NAV_LINKS.map((link) => (
+            <a 
+              key={link.name} 
+              href={isHome ? link.href : `/${link.href}`}
+              className="text-[10px] font-bold uppercase tracking-widest text-dark/60 hover:text-primary transition-colors"
+            >
+              {link.name}
+            </a>
+          ))}
+          <a 
+            href="https://teaminertia.com/contact-goa-web-design-team/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest font-bold"
+          >
+            Get a Quote
+          </a>
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="md:hidden p-2 text-dark"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X /> : <Menu />}
+        </button>
+      </div>
+
+      {/* Mobile Nav */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white border-b border-black/5 overflow-hidden"
+          >
+            <div className="flex flex-col p-6 gap-4">
+              {NAV_LINKS.map((link) => (
+                <a 
+                  key={link.name} 
+                  href={isHome ? link.href : `/${link.href}`}
+                  onClick={() => setIsOpen(false)}
+                  className="text-sm font-bold uppercase tracking-widest text-dark/60 hover:text-primary transition-colors"
+                >
+                  {link.name}
+                </a>
+              ))}
+              <a 
+                href="https://teaminertia.com/contact-goa-web-design-team/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary w-full py-4 text-[10px] uppercase tracking-widest font-bold text-center mt-2"
+              >
+                Get a Quote
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -248,12 +351,61 @@ function ScrollToTop() {
 function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("Latest First");
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  const sortOptions = ["Latest First", "All", "A-Z", "Z-A", "Oldest First"];
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const categories = ["All", ...Array.from(new Set(PROJECTS.map(p => p.sector))).sort()];
 
-  const filteredProjects = activeCategory === "All" 
-    ? PROJECTS 
-    : PROJECTS.filter(p => p.sector === activeCategory);
+  const parseDate = (dateStr: string) => {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const [month, year] = dateStr.split(" ");
+    return new Date(parseInt(year), months.indexOf(month)).getTime();
+  };
+
+  const filteredProjects = useMemo(() => {
+    let result = PROJECTS.filter(p => {
+      const matchesCategory = activeCategory === "All" || p.sector === activeCategory;
+      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           p.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           p.sector.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+
+    switch (sortBy) {
+      case "A-Z":
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "Z-A":
+        result.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "Latest First":
+        result.sort((a, b) => parseDate(b.handoverDate) - parseDate(a.handoverDate));
+        break;
+      case "Oldest First":
+        result.sort((a, b) => parseDate(a.handoverDate) - parseDate(b.handoverDate));
+        break;
+      default: // "All" or default
+        // If "All" is selected, we could keep original order or just sort by latest as default
+        result.sort((a, b) => parseDate(b.handoverDate) - parseDate(a.handoverDate));
+        break;
+    }
+    return result;
+  }, [activeCategory, searchQuery, sortBy]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -271,7 +423,13 @@ function Home() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* 1. HERO SECTION */}
+      <Helmet>
+        <title>teamINERTIA TECHNOLOGIES | Digital Agency in Goa</title>
+        <meta name="description" content="teamINERTIA TECHNOLOGIES is a leading digital agency in Goa specializing in web design, development, and digital marketing with over 20 years of experience." />
+        <link rel="canonical" href="https://teaminertia.com/" />
+      </Helmet>
+      <main>
+        {/* 1. HERO SECTION */}
       <section id="home" className="relative pt-24 pb-32 overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -381,6 +539,75 @@ function Home() {
               We use our digital, design and development expertise to achieve quantifiable business goals, build a strong foundation early on in our projects and empower our clients to reach their maximum potential.
             </p>
 
+            {/* Search and Sort Controls */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-12 max-w-3xl mx-auto">
+              <div className="relative w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-body/40" />
+                <input 
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-light border border-black/5 rounded-full py-3.5 pl-12 pr-6 text-sm focus:outline-none focus:border-primary/30 transition-all placeholder:text-body/30"
+                />
+              </div>
+              
+              <div className="relative w-full md:w-auto min-w-[200px]" ref={sortRef}>
+                <button
+                  onClick={() => setIsSortOpen(!isSortOpen)}
+                  className="w-full flex items-center justify-between bg-white border border-black/5 rounded-full py-3.5 px-6 text-sm hover:border-primary/30 transition-all cursor-pointer font-bold text-dark shadow-sm hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                    <span className="uppercase tracking-widest text-[10px]">{sortBy}</span>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isSortOpen ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown className="w-4 h-4 text-body/40" />
+                  </motion.div>
+                </button>
+
+                <AnimatePresence>
+                  {isSortOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-black/5 rounded-2xl shadow-2xl z-50 overflow-hidden py-2 backdrop-blur-xl"
+                    >
+                      {sortOptions.map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => {
+                            setSortBy(option);
+                            setIsSortOpen(false);
+                          }}
+                          className={`w-full text-left px-6 py-3 text-[10px] uppercase tracking-widest font-bold transition-all hover:pl-8 ${
+                            sortBy === option 
+                              ? "text-primary bg-primary/5" 
+                              : "text-body/60 hover:text-primary hover:bg-light"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            {option}
+                            {sortBy === option && (
+                              <motion.div
+                                layoutId="active-sort"
+                                className="w-1 h-1 rounded-full bg-primary"
+                              />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
             {/* Category Tabs */}
             <div className="flex flex-wrap justify-center gap-2 mb-12">
               {categories.map((category) => (
@@ -404,7 +631,7 @@ function Home() {
             className="columns-1 md:columns-2 gap-10 space-y-10"
           >
             <AnimatePresence mode="popLayout">
-              {[...filteredProjects].sort((a, b) => a.title.localeCompare(b.title)).map((project, index) => (
+              {filteredProjects.map((project, index) => (
                 <motion.div
                   key={project.id}
                   layout
@@ -595,7 +822,8 @@ function Home() {
           </motion.div>
         </motion.div>
       </section>
-    </motion.div>
+    </main>
+  </motion.div>
   );
 }
 
@@ -622,7 +850,16 @@ function ProjectDetail() {
       transition={{ duration: 0.5 }}
       className="pt-24 pb-32"
     >
-      <div className="max-w-5xl mx-auto px-6">
+      <Helmet>
+        <title>{`${project.title} | teamINERTIA Portfolio`}</title>
+        <meta name="description" content={project.desc} />
+        <link rel="canonical" href={`https://teaminertia.com/portfolio/${project.id}`} />
+        <meta property="og:title" content={`${project.title} | teamINERTIA Portfolio`} />
+        <meta property="og:description" content={project.desc} />
+        <meta property="og:image" content={project.thumbnail} />
+      </Helmet>
+      <main>
+        <div className="max-w-5xl mx-auto px-6">
         <Link to="/" className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.2em] text-body hover:text-primary transition-colors mb-16 group">
           <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Portfolio
         </Link>
@@ -712,64 +949,68 @@ function ProjectDetail() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </main>
+  </motion.div>
   );
 }
 
 export default function App() {
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen selection:bg-primary/20 selection:text-primary bg-white">
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/portfolio/:id" element={<ProjectDetail />} />
-          </Routes>
-        </AnimatePresence>
+    <HelmetProvider>
+      <Router>
+        <ScrollToTop />
+        <Navbar />
+        <div className="min-h-screen selection:bg-primary/20 selection:text-primary bg-white pt-20">
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/portfolio/:id" element={<ProjectDetail />} />
+            </Routes>
+          </AnimatePresence>
 
-        {/* 8. FOOTER */}
-        <footer className="bg-dark pt-12 pb-8 text-white/80 border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="grid md:grid-cols-3 gap-8 items-center mb-12">
-              {/* Left: Logo and Social */}
-              <div className="flex flex-col gap-6">
-                <img src="/logo.png" alt="teamINERTIA TECHNOLOGIES" className="h-12 w-auto object-contain self-start opacity-90" referrerPolicy="no-referrer" />
-                <div className="flex gap-4">
-                  <a href="https://in.linkedin.com/company/team-inertia-technologies" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Linkedin className="w-4 h-4" /></a>
-                  <a href="https://www.instagram.com/teaminertiatechnologies/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>
-                  <a href="https://www.facebook.com/TeamInertiaTechnologies" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Facebook className="w-4 h-4" /></a>
+          {/* 8. FOOTER */}
+          <footer className="bg-dark pt-12 pb-8 text-white/80 border-t border-white/5">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="grid md:grid-cols-3 gap-8 items-center mb-12">
+                {/* Left: Logo and Social */}
+                <div className="flex flex-col gap-6">
+                  <img src="/logo.png" alt="teamINERTIA TECHNOLOGIES" className="h-12 w-auto object-contain self-start opacity-90" referrerPolicy="no-referrer" />
+                  <div className="flex gap-4">
+                    <a href="https://in.linkedin.com/company/team-inertia-technologies" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Linkedin className="w-4 h-4" /></a>
+                    <a href="https://www.instagram.com/teaminertiatechnologies/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>
+                    <a href="https://www.facebook.com/TeamInertiaTechnologies" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors"><Facebook className="w-4 h-4" /></a>
+                  </div>
+                </div>
+
+                {/* Center: Address */}
+                <div className="text-center">
+                  <p className="text-[11px] leading-relaxed text-white/40 max-w-xs mx-auto">
+                    F-2, 1st Floor, Live in Apartments, Bernardo Guedes Road, Panaji, Goa, 403 001, India.
+                  </p>
+                </div>
+
+                {/* Right: Contact Info */}
+                <div className="flex flex-col md:items-end text-right gap-1">
+                  <div className="text-[11px] text-white/40">+91 8322426447</div>
+                  <div className="text-[11px] text-white/40">contactus@teaminertia.com</div>
                 </div>
               </div>
 
-              {/* Center: Address */}
-              <div className="text-center">
-                <p className="text-[11px] leading-relaxed text-white/40 max-w-xs mx-auto">
-                  F-2, 1st Floor, Live in Apartments, Bernardo Guedes Road, Panaji, Goa, 403 001, India.
+              <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-[10px] text-white/20 uppercase tracking-widest">
+                  ©2026 Team Inertia Technologies. All Rights Reserved.
                 </p>
-              </div>
-
-              {/* Right: Contact Info */}
-              <div className="flex flex-col md:items-end text-right gap-1">
-                <div className="text-[11px] text-white/40">+91 8322426447</div>
-                <div className="text-[11px] text-white/40">contactus@teaminertia.com</div>
+                <button 
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="text-[10px] text-white/40 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2"
+                >
+                  Go to Top <ArrowRight className="-rotate-90 w-3 h-3" />
+                </button>
               </div>
             </div>
-
-            <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-[10px] text-white/20 uppercase tracking-widest">
-                ©2026 Team Inertia Technologies. All Rights Reserved.
-              </p>
-              <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="text-[10px] text-white/40 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2"
-              >
-                Go to Top <ArrowRight className="-rotate-90 w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </Router>
+          </footer>
+        </div>
+      </Router>
+    </HelmetProvider>
   );
 }
